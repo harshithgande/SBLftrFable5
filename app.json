@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "SBLftr",
+    "slug": "sblftr",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "sblftr",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "jsEngine": "hermes",
+    "backgroundColor": "#0C0F14",
+    "splash": {
+      "backgroundColor": "#0C0F14",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "SBLftr uses photos you choose to personalize your training plan and to compare your physique progress over time. Photos are only analyzed when you explicitly submit them."
+      }
+    },
+    "android": {
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SBLftr uses photos you choose to personalize your training plan and to compare your physique progress over time."
+        }
+      ]
+    ]
+  }
+}
