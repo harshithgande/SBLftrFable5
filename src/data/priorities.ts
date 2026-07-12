@@ -1,0 +1,207 @@
+import { Physique, WorkoutType } from '../types';
+
+/**
+ * Exercise priority per physique goal.
+ *
+ * Semantics (consumed by src/utils/ordering.ts):
+ * - push / pull / full: the list IS the desired display order — exercises
+ *   hitting the goal's highest-priority (or typically weakest) muscles first.
+ * - upper / lower: the list ranks priority WITHIN the "needs work" partition
+ *   and the "well-developed" partition; needs-work exercises always come
+ *   first (see WELL_DEVELOPED in workoutPools.ts).
+ *
+ * Rationale, in brief (see PRODUCT_DECISIONS.md for sources):
+ * - aesthetic: v-taper bias — side delts, upper chest, lats, arms early while fresh.
+ * - athletic: balanced structure — compound pressing/rowing and posterior chain first.
+ * - strongman: size bias — heaviest compound movers first, isolation later.
+ */
+export const PRIORITIES: Record<Physique, Record<WorkoutType, string[]>> = {
+  aesthetic: {
+    push: [
+      'db-lateral-raise',
+      'chest-fly',
+      'incline-smith-bench',
+      'single-arm-tricep-ext',
+      'smith-shoulder-press',
+      'jm-press',
+    ],
+    pull: [
+      'lat-pulldown',
+      'incline-curl',
+      'rear-delt-fly',
+      'preacher-curl',
+      'cg-chest-supported-row',
+      'kelso-shrug',
+    ],
+    upper: [
+      'db-lateral-raise',
+      'chest-fly',
+      'incline-curl',
+      'single-arm-tricep-ext',
+      'jm-press',
+      'cuffed-reverse-curl',
+      'lat-pulldown',
+      'incline-smith-bench',
+      'smith-shoulder-press',
+      'h2l-cg-pulldown',
+      'preacher-curl',
+      'kelso-shrug',
+    ],
+    lower: [
+      'crunch-machine',
+      'leg-extension',
+      'leg-curl',
+      'calf-raise',
+      'sldl',
+      'hip-abduction',
+      'leg-press',
+    ],
+    full: [
+      'db-lateral-raise',
+      'chest-fly',
+      'lat-pulldown',
+      'incline-curl',
+      'crunch-machine',
+      'leg-extension',
+      'single-arm-tricep-ext',
+      'incline-smith-bench',
+      'leg-curl',
+      'smith-shoulder-press',
+      'preacher-curl',
+      'h2l-cg-pulldown',
+      'kelso-shrug',
+      'jm-press',
+      'cuffed-reverse-curl',
+      'leg-press',
+      'sldl',
+      'calf-raise',
+      'hip-abduction',
+    ],
+  },
+  athletic: {
+    push: [
+      'incline-smith-bench',
+      'smith-shoulder-press',
+      'chest-fly',
+      'jm-press',
+      'db-lateral-raise',
+      'single-arm-tricep-ext',
+    ],
+    pull: [
+      'cg-chest-supported-row',
+      'lat-pulldown',
+      'rear-delt-fly',
+      'kelso-shrug',
+      'incline-curl',
+      'preacher-curl',
+    ],
+    upper: [
+      'chest-fly',
+      'single-arm-tricep-ext',
+      'db-lateral-raise',
+      'incline-curl',
+      'jm-press',
+      'cuffed-reverse-curl',
+      'incline-smith-bench',
+      'smith-shoulder-press',
+      'lat-pulldown',
+      'h2l-cg-pulldown',
+      'kelso-shrug',
+      'preacher-curl',
+    ],
+    lower: [
+      'crunch-machine',
+      'sldl',
+      'leg-curl',
+      'leg-press',
+      'hip-abduction',
+      'leg-extension',
+      'calf-raise',
+    ],
+    full: [
+      'incline-smith-bench',
+      'leg-press',
+      'sldl',
+      'smith-shoulder-press',
+      'lat-pulldown',
+      'crunch-machine',
+      'chest-fly',
+      'leg-curl',
+      'kelso-shrug',
+      'jm-press',
+      'incline-curl',
+      'db-lateral-raise',
+      'h2l-cg-pulldown',
+      'preacher-curl',
+      'single-arm-tricep-ext',
+      'cuffed-reverse-curl',
+      'leg-extension',
+      'hip-abduction',
+      'calf-raise',
+    ],
+  },
+  strongman: {
+    push: [
+      'incline-smith-bench',
+      'smith-shoulder-press',
+      'jm-press',
+      'chest-fly',
+      'single-arm-tricep-ext',
+      'db-lateral-raise',
+    ],
+    pull: [
+      'cg-chest-supported-row',
+      'lat-pulldown',
+      'kelso-shrug',
+      'preacher-curl',
+      'incline-curl',
+      'rear-delt-fly',
+    ],
+    upper: [
+      'jm-press',
+      'chest-fly',
+      'cuffed-reverse-curl',
+      'incline-curl',
+      'single-arm-tricep-ext',
+      'db-lateral-raise',
+      'incline-smith-bench',
+      'smith-shoulder-press',
+      'lat-pulldown',
+      'kelso-shrug',
+      'h2l-cg-pulldown',
+      'preacher-curl',
+    ],
+    lower: [
+      'crunch-machine',
+      'leg-press',
+      'sldl',
+      'leg-extension',
+      'leg-curl',
+      'hip-abduction',
+      'calf-raise',
+    ],
+    full: [
+      'incline-smith-bench',
+      'leg-press',
+      'sldl',
+      'smith-shoulder-press',
+      'lat-pulldown',
+      'jm-press',
+      'kelso-shrug',
+      'leg-extension',
+      'leg-curl',
+      'chest-fly',
+      'h2l-cg-pulldown',
+      'preacher-curl',
+      'incline-curl',
+      'single-arm-tricep-ext',
+      'cuffed-reverse-curl',
+      'crunch-machine',
+      'hip-abduction',
+      'calf-raise',
+    ],
+  },
+};
+
+/** Neutral order used before onboarding picks a goal. */
+export const DEFAULT_PRIORITY_GOAL: Physique = 'athletic';
