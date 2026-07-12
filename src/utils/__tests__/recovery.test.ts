@@ -1,6 +1,7 @@
+import { statusFor } from '../../components/BodyDiagram';
 import { HistoryItem } from '../../types';
 import { MS_PER_DAY } from '../date';
-import { muscleRecovery } from '../recovery';
+import { muscleRecovery, recoveryByMuscle } from '../recovery';
 
 function pushSession(dateISO: string): HistoryItem {
   return {
@@ -42,5 +43,23 @@ describe('muscle recovery heuristic', () => {
   it('ignores malformed dates', () => {
     const broken = { ...pushSession('not-a-date') };
     expect(muscleRecovery([broken], now)).toHaveLength(0);
+  });
+});
+
+describe('body-map status mapping', () => {
+  const now = new Date('2026-07-10T12:00:00Z');
+
+  it('keys recovery by muscle for the diagram', () => {
+    const map = recoveryByMuscle([pushSession(new Date(now.getTime() - 12 * 3600000).toISOString())], now);
+    expect(map.get('chest')?.status).toBe('recovering');
+    expect(map.has('quads')).toBe(false);
+  });
+
+  it('maps entries to the three visual statuses', () => {
+    const map = recoveryByMuscle([pushSession(new Date(now.getTime() - 12 * 3600000).toISOString())], now);
+    expect(statusFor(map.get('chest'))).toBe('recovering');
+    expect(statusFor(map.get('quads'))).toBe('no-data');
+    const oldMap = recoveryByMuscle([pushSession(new Date(now.getTime() - 3 * MS_PER_DAY).toISOString())], now);
+    expect(statusFor(oldMap.get('chest'))).toBe('ready');
   });
 });

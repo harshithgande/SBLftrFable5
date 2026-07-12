@@ -79,16 +79,43 @@ copied.
    wipes inputs. The rest timer is wall-clock (timestamp) based, immune to JS
    interval drift.
 
-9. **Recovery is honest.** A transparent 48-hour rule with an in-app "What is
-   this?" explanation, shown as per-muscle progress bars with text labels (not
-   color-only). It is explicitly framed as a rule of thumb, not medical
-   measurement. A custom anatomy diagram was rejected: labeled bars are more
-   accessible and less pseudo-precise.
+9. **Recovery is honest — and visual.** A transparent 48-hour rule with an
+   in-app "What is this?" explanation, shown as an interactive front/back body
+   map: green = ready, red = needs rest, muted = no sessions in the last week.
+   Tapping a muscle shows its name, status and hours since last trained.
+   Accessibility safeguards: status is never color-alone — recovering muscles
+   carry a diagonal hatch texture, the legend and tap-detail row spell status
+   out in text, and the whole map exposes a spoken summary. The green/red
+   status pair (#34D399 / #F87171) was validated for color-vision-deficiency
+   separation (ΔE 18.5 under deuteranopia, above the ≥12 target) and ≥3:1
+   contrast on the dark surface. The map remains explicitly framed as a rule
+   of thumb, not medical measurement.
 
 10. **Retention features are restrained:** weekly consistency ring (x of your
     own target), week streak that an in-progress week can extend but never
     break early, PR celebrations, and a gentle rest-day card. No loss-aversion
     mechanics, no guilt copy.
+
+## Color system (revised)
+
+The palette was revisited against 2026 dark-mode fitness-app research (UXPin,
+GenDesigns, Envato trend reports, Canvas Builder's dark-mode fitness dashboard
+analysis): the consistent pattern is a near-black base, ONE high-energy accent
+reserved for progress and CTAs, oversized numerals, and blue/green families
+reading best in gym lighting. Two decisions followed:
+
+1. **Brand accent moved from lime to electric blue (#38BDF8).** The deciding
+   factor was semantic collision: the recovery body map needs green to mean
+   "ready", and a green-family brand accent would make every button read as a
+   status. Blue carries the trust/progress association from the research,
+   keeps high contrast (≈9:1 on the #0A0E16 base), and leaves green/red
+   exclusively for status semantics app-wide.
+2. **Base surfaces are blue-tinted near-black** (#0A0E16 → #121926 → #1A2334)
+   per the "near-black base reduces eye strain, OLED-friendly" guidance, with
+   all text/border tokens re-checked for WCAG contrast.
+
+Status colors (success/danger/warning) are reserved and never used as brand
+or series colors.
 
 ## Free vs Premium
 

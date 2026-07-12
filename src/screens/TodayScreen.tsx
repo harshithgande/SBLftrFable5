@@ -3,8 +3,9 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
+import { BodyDiagram, statusFor } from '../components/BodyDiagram';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { RingProgress } from '../components/RingProgress';
@@ -18,9 +19,9 @@ import { exerciseName } from '../data/exercises';
 import { WORKOUT_TYPE_NAMES } from '../data/workoutPools';
 import { RootStackParamList, TabParamList } from '../navigation/types';
 import { colors, radii, spacing, type } from '../theme';
-import { ActiveWorkout, WorkoutType } from '../types';
+import { ActiveWorkout, MuscleGroup, WorkoutType } from '../types';
 import { dateKey, greetingForHour, simulatedNow, slotForDate } from '../utils/date';
-import { muscleRecovery, RECOVERY_WINDOW_HOURS } from '../utils/recovery';
+import { MuscleRecovery, recoveryByMuscle, RECOVERY_WINDOW_HOURS } from '../utils/recovery';
 import { weekStreak, workoutsInWeekOf } from '../utils/streak';
 import { parseNumericInput } from '../utils/units';
 import { uid } from '../utils/id';
@@ -41,8 +42,10 @@ export function TodayScreen({ navigation }: Props) {
     return unsubscribe;
   }, [navigation, dispatch]);
 
+  const { width } = useWindowDimensions();
   const [targetsOpen, setTargetsOpen] = useState(false);
   const [recoveryInfoOpen, setRecoveryInfoOpen] = useState(false);
+  const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null);
   const [waterTarget, setWaterTarget] = useState(`${state.goalTargets.water}`);
   const [stepsTarget, setStepsTarget] = useState(`${state.goalTargets.steps}`);
   const [caloriesTarget, setCaloriesTarget] = useState(`${state.goalTargets.calories}`);
@@ -56,7 +59,7 @@ export function TodayScreen({ navigation }: Props) {
   const target = state.frequency ?? 4;
   const doneThisWeek = workoutsInWeekOf(state.history, now);
   const streak = weekStreak(state.history, target, now);
-  const recovery = useMemo(() => muscleRecovery(state.history, now), [state.history, now]);
+  const recovery = useMemo(() => recoveryByMuscle(state.history, now), [state.history, now]);
 
   const startWorkout = (type: WorkoutType) => {
     if (state.activeWorkout) {
@@ -203,41 +206,32 @@ export function TodayScreen({ navigation }: Props) {
         title="Muscle recovery"
         action={{ label: 'What is this?', onPress: () => setRecoveryInfoOpen(true) }}
       />
-      {recovery.length === 0 ? (
-        <Card>
-          <Text style={type.body}>
-            Nothing logged in the last week, so every muscle group is fresh and ready to train.
+      <Card>
+        {recovery.size === 0 ? (
+          <Text style={[type.caption, { marginBottom: spacing.md }]}>
+            Nothing logged in the last week, so every muscle group is fresh — the map fills in as
+            you train.
           </Text>
-        </Card>
-      ) : (
-        <Card>
-          {recovery.slice(0, 6).map((r) => (
-            <View key={r.muscle} style={styles.recoveryRow}>
-              <Text style={[type.body, styles.recoveryName]}>{capitalize(r.muscle)}</Text>
-              <View style={styles.recoveryTrack} accessibilityLabel={`${r.muscle}: ${r.status}`}>
-                <View
-                  style={[
-                    styles.recoveryFill,
-                    {
-                      width: `${Math.round(r.progress * 100)}%`,
-                      backgroundColor: r.status === 'ready' ? colors.success : colors.warning,
-                    },
-                  ]}
-                />
-              </View>
-              <Text
-                style={[
-                  type.caption,
-                  styles.recoveryStatus,
-                  { color: r.status === 'ready' ? colors.success : colors.warning },
-                ]}
-              >
-                {r.status === 'ready' ? 'Ready' : 'Recovering'}
-              </Text>
-            </View>
-          ))}
-        </Card>
-      )}
+        ) : null}
+        <BodyDiagram
+          recovery={recovery}
+          selected={selectedMuscle}
+          onSelect={(m) => setSelectedMuscle((prev) => (prev === m ? null : m))}
+          width={width - spacing.xl * 2 - spacing.lg * 2}
+        />
+        <View style={styles.legendRow}>
+          <LegendItem color={colors.success} label="Ready" />
+          <LegendItem color={colors.danger} label="Needs rest" hatched />
+          <LegendItem color={colors.borderStrong} label="No recent data" />
+        </View>
+        <View style={styles.recoveryDetail} accessibilityLiveRegion="polite">
+          {selectedMuscle ? (
+            <RecoveryDetail muscle={selectedMuscle} entry={recovery.get(selectedMuscle)} />
+          ) : (
+            <Text style={type.caption}>Tap a muscle on the map to see its status.</Text>
+          )}
+        </View>
+      </Card>
 
       {!state.premium ? (
         <Card
@@ -275,12 +269,13 @@ export function TodayScreen({ navigation }: Props) {
         <Button label="Save targets" onPress={saveTargets} style={{ marginTop: spacing.xl }} />
       </Sheet>
 
-      <Sheet visible={recoveryInfoOpen} title="How recovery works" onClose={() => setRecoveryInfoOpen(false)}>
+      <Sheet visible={recoveryInfoOpen} title="How the recovery map works" onClose={() => setRecoveryInfoOpen(false)}>
         <Text style={type.body}>
           This is a simple, transparent rule of thumb — not a medical measurement. A muscle group
-          shows as “Recovering” for {RECOVERY_WINDOW_HOURS} hours after you last trained it, then
-          “Ready”. Muscles you haven’t trained in the past week aren’t shown. Use it as a nudge, and
-          listen to your body first.
+          shows red with hatching (“Needs rest”) for {RECOVERY_WINDOW_HOURS} hours after you last
+          trained it, then green (“Ready”). Muscles with no sessions in the past week stay muted —
+          no data, which usually just means they’re fresh. Tap any muscle for details. Use the map
+          as a nudge, and listen to your body first.
         </Text>
         <Button label="Got it" onPress={() => setRecoveryInfoOpen(false)} variant="secondary" style={{ marginTop: spacing.xl }} />
       </Sheet>
@@ -311,6 +306,43 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+function LegendItem({ color, label, hatched = false }: { color: string; label: string; hatched?: boolean }) {
+  return (
+    <View style={styles.legendItem} accessibilityLabel={`${label} legend color`}>
+      <View style={[styles.legendSwatch, { backgroundColor: color }]}>
+        {hatched ? <View style={styles.legendHatch} /> : null}
+      </View>
+      <Text style={type.caption}>{label}</Text>
+    </View>
+  );
+}
+
+function RecoveryDetail({ muscle, entry }: { muscle: MuscleGroup; entry: MuscleRecovery | undefined }) {
+  const status = statusFor(entry);
+  const icon =
+    status === 'ready' ? 'checkmark-circle' : status === 'recovering' ? 'time' : 'ellipse-outline';
+  const color =
+    status === 'ready' ? colors.success : status === 'recovering' ? colors.danger : colors.textTertiary;
+  const statusText =
+    status === 'ready' ? 'Ready to train' : status === 'recovering' ? 'Needs rest' : 'No recent training';
+  const detail = entry
+    ? entry.hoursSince < 1
+      ? 'Trained under an hour ago'
+      : `Trained ${Math.round(entry.hoursSince)}h ago`
+    : 'No sessions in the last 7 days';
+
+  return (
+    <View style={styles.recoveryDetailRow}>
+      <Ionicons name={icon} size={18} color={color} />
+      <Text style={[type.bodyStrong, { flex: 1 }]}>{capitalize(muscle)}</Text>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={[type.bodyStrong, { color }]}>{statusText}</Text>
+        <Text style={type.caption}>{detail}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -332,17 +364,38 @@ const styles = StyleSheet.create({
   doneRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginVertical: spacing.md },
   goalToggle: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
-  recoveryRow: { flexDirection: 'row', alignItems: 'center', marginVertical: spacing.sm, gap: spacing.md },
-  recoveryName: { width: 96, color: colors.text },
-  recoveryTrack: {
-    flex: 1,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.surfaceRaised,
-    overflow: 'hidden',
+  legendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    marginTop: spacing.md,
   },
-  recoveryFill: { height: 8, borderRadius: 4 },
-  recoveryStatus: { width: 76, textAlign: 'right' },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  legendSwatch: {
+    width: 14,
+    height: 14,
+    borderRadius: 4,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  legendHatch: {
+    width: 20,
+    height: 2,
+    backgroundColor: colors.bg,
+    opacity: 0.55,
+    transform: [{ rotate: '45deg' }],
+  },
+  recoveryDetail: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  recoveryDetailRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   upgradeCard: { marginTop: spacing.xl, borderColor: colors.premiumDim },
   upgradeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 });
