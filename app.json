@@ -8,9 +8,9 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "jsEngine": "hermes",
-    "backgroundColor": "#0C0F14",
+    "backgroundColor": "#0A0E16",
     "splash": {
-      "backgroundColor": "#0C0F14",
+      "backgroundColor": "#0A0E16",
       "resizeMode": "contain"
     },
     "ios": {

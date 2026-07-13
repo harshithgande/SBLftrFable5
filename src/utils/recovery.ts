@@ -49,3 +49,10 @@ export function muscleRecovery(history: HistoryItem[], now: Date): MuscleRecover
   // Most-recently-trained (least recovered) first.
   return out.sort((a, b) => a.hoursSince - b.hoursSince);
 }
+
+/** Same data keyed by muscle, for the body-map visualization. */
+export function recoveryByMuscle(history: HistoryItem[], now: Date): Map<MuscleGroup, MuscleRecovery> {
+  const map = new Map<MuscleGroup, MuscleRecovery>();
+  for (const entry of muscleRecovery(history, now)) map.set(entry.muscle, entry);
+  return map;
+}
